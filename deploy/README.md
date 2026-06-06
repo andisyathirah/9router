@@ -13,7 +13,8 @@ Target VPS: **4 vCPU / 8 GiB RAM / 100 GiB SSD** (misal Alibaba Cloud ESSD Entry
 
 | File | Fungsi |
 |---|---|
-| `install-vps.sh` | Bootstrap VPS: Docker + UFW + swap + jalankan 9Router |
+| `install-vps.sh` | Bootstrap VPS **Ubuntu/Debian**: Docker + UFW + swap + jalankan 9Router |
+| `install-vps-centos.sh` | Bootstrap VPS **CentOS-family** (CentOS Stream / AlmaLinux / Rocky / RHEL 8+9): Docker + firewalld + EPEL + SELinux tweaks |
 | `install-hermes.sh` | Install Hermes Agent + auto-config ke 9Router |
 | `docker-compose.yml` | Stack 9Router + Caddy (auto HTTPS) |
 | `Caddyfile` | Reverse proxy + TLS Let's Encrypt |
@@ -52,11 +53,13 @@ Target VPS: **4 vCPU / 8 GiB RAM / 100 GiB SSD** (misal Alibaba Cloud ESSD Entry
 
 ### Prasyarat
 
-- Ubuntu 22.04 / 24.04 atau Debian 12 (clean install)
+- Salah satu dari (clean install):
+  - **Ubuntu** 22.04 / 24.04, atau **Debian** 12 → pakai `install-vps.sh`
+  - **CentOS Stream** 8 / 9, **AlmaLinux** 8 / 9, **Rocky Linux** 8 / 9, **RHEL** 8 / 9 → pakai `install-vps-centos.sh`
 - Akses root via SSH
 - (Opsional, sangat disarankan) Domain yang sudah pointing **A record** ke IP VPS untuk dapat HTTPS otomatis
 
-### Langkah
+### Langkah — Ubuntu / Debian
 
 ```bash
 # 1. SSH ke VPS sebagai root
@@ -73,6 +76,30 @@ sudo bash install-vps.sh
 # 3b. Dengan domain (HTTPS otomatis via Let's Encrypt)
 sudo DOMAIN=router.contohanda.com bash install-vps.sh
 ```
+
+### Langkah — CentOS / AlmaLinux / Rocky / RHEL
+
+```bash
+# 1. SSH ke VPS sebagai root
+ssh root@IP-VPS-ANDA
+
+# 2. Install git lalu clone
+dnf -y install git
+git clone --depth 1 https://github.com/andisyathirah/9router.git
+cd 9router/deploy
+
+# 3a. Tanpa domain
+sudo bash install-vps-centos.sh
+
+# 3b. Dengan domain (HTTPS otomatis)
+sudo DOMAIN=router.contohanda.com bash install-vps-centos.sh
+```
+
+> **Beda dari versi Ubuntu:** pakai `dnf` (bukan `apt`), `firewalld` (bukan `ufw`),
+> tarik fail2ban dari **EPEL**, dan auto-set SELinux boolean
+> `container_manage_cgroup` supaya container Docker tidak ditolak SELinux.
+> Stack default pakai *named volume* (bukan bind-mount), jadi tidak perlu
+> repot dengan label `:Z` SELinux.
 
 Script akan:
 
@@ -248,6 +275,23 @@ Disk 100 GB juga lebih dari cukup — 9Router DB biasanya < 500 MB setelah berbu
 - Pastikan A record domain sudah pointing ke IP VPS (cek `dig router.contohanda.com`)
 - Pastikan port 80 + 443 terbuka di firewall cloud provider (Alibaba security group, dll)
 - Cek log: `docker compose logs caddy`
+
+**(CentOS) `docker compose up` ditolak oleh SELinux**
+- `getenforce` — kalau `Enforcing`, jalankan: `sudo setsebool -P container_manage_cgroup on`
+- `sudo ausearch -m AVC -ts recent` — lihat denial terakhir
+- Workaround terakhir (kurang aman): `sudo setenforce 0` (sementara) lalu cek apakah masalah
+  benar dari SELinux
+
+**(CentOS) firewalld tidak aktif / port tetap ketutup**
+- `sudo systemctl status firewalld`
+- `sudo firewall-cmd --list-all` — pastikan service `http`, `https`, dan port `20128/tcp`
+  (kalau no-domain) ada di zone `public`
+- Reload: `sudo firewall-cmd --reload`
+
+**(CentOS RHEL) `epel-release` tidak ditemukan**
+- RHEL official tidak punya EPEL di subscription default. Script akan fallback ke
+  `https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm`. Kalau tetap
+  gagal, fail2ban akan di-skip — tidak fatal, instalasi lanjut tanpa fail2ban.
 
 **Dashboard 9Router tidak bisa diakses**
 - `docker compose ps` — pastikan container `9router` status `healthy`

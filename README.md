@@ -11,7 +11,10 @@ git clone --depth 1 https://github.com/andisyathirah/9router.git
 cd 9router/deploy
 
 # Deploy 9Router (HTTPS otomatis kalau punya domain)
+# Ubuntu / Debian:
 sudo DOMAIN=router.contohanda.com bash install-vps.sh
+# CentOS Stream / AlmaLinux / Rocky / RHEL 8+9:
+sudo DOMAIN=router.contohanda.com bash install-vps-centos.sh
 
 # Install Hermes Agent + auto-config ke 9Router
 bash install-hermes.sh \
