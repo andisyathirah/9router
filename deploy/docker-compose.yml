@@ -1,0 +1,55 @@
+services:
+  9router:
+    image: decolua/9router:latest
+    container_name: 9router
+    restart: unless-stopped
+    ports:
+      # Bind hanya ke localhost — akses dari luar lewat Caddy/Nginx (HTTPS).
+      # Ganti ke "20128:20128" kalau mau langsung expose ke internet.
+      - "127.0.0.1:20128:20128"
+    env_file:
+      - .env.production
+    volumes:
+      - 9router-data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:20128/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    # Resource limit — aman buat VPS 4 vCPU / 8 GB.
+    deploy:
+      resources:
+        limits:
+          cpus: "3.0"
+          memory: 4g
+        reservations:
+          memory: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Reverse proxy + auto HTTPS via Let's Encrypt.
+  # Hapus block ini kalau sudah punya Nginx/Traefik sendiri.
+  caddy:
+    image: caddy:2-alpine
+    container_name: 9router-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-:80}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - 9router
+
+volumes:
+  9router-data:
+  caddy-data:
+  caddy-config:

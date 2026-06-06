@@ -1,0 +1,29 @@
+# Caddy reverse proxy untuk 9Router.
+# Ganti {$DOMAIN} dengan domain Anda di .env.production (DOMAIN=router.contohanda.com)
+# Kalau belum punya domain, ganti baris pertama jadi `:80` (HTTP only).
+
+{$DOMAIN} {
+    encode gzip zstd
+
+    # Naikkan limit body buat upload service-account JSON / config besar.
+    request_body {
+        max_size 10MB
+    }
+
+    # Streaming SSE / chunked response harus tetap jalan.
+    reverse_proxy 9router:20128 {
+        flush_interval -1
+        transport http {
+            read_timeout  10m
+            write_timeout 10m
+        }
+    }
+
+    # Security headers ringan.
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options    "nosniff"
+        Referrer-Policy           "strict-origin-when-cross-origin"
+        -Server
+    }
+}
