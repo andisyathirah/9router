@@ -43,9 +43,9 @@ require_root
 # --- 1. Update sistem -------------------------------------------------------
 log "Update apt & install paket dasar"
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -y
-apt-get upgrade -y
-apt-get install -y \
+yum update -y
+yum upgrade -y
+yum install -y \
   ca-certificates curl gnupg lsb-release \
   ufw fail2ban htop unzip jq openssl \
   apt-transport-https software-properties-common
@@ -80,8 +80,8 @@ if ! command -v docker >/dev/null 2>&1; then
     https://download.docker.com/linux/${ID} ${VERSION_CODENAME} stable" \
     > /etc/apt/sources.list.d/docker.list
 
-  apt-get update -y
-  apt-get install -y docker-ce docker-ce-cli containerd.io \
+  yum update -y
+  yum install -y docker-ce docker-ce-cli containerd.io \
                      docker-buildx-plugin docker-compose-plugin
   systemctl enable --now docker
 else
