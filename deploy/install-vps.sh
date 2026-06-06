@@ -76,7 +76,7 @@ if ! command -v docker >/dev/null 2>&1; then
 
   . /etc/os-release
   echo \
-    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+    "deb [arch=$(yum --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
     https://download.docker.com/linux/${ID} ${VERSION_CODENAME} stable" \
     > /etc/apt/sources.list.d/docker.list
 
