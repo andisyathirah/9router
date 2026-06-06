@@ -69,10 +69,10 @@ fi
 # --- 3. Docker --------------------------------------------------------------
 if ! command -v docker >/dev/null 2>&1; then
   log "Install Docker Engine + Compose plugin"
-  install -m 0755 -d /etc/apt/keyrings
+  install -m 0755 -d /etc/yum/keyrings
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-    | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  chmod a+r /etc/apt/keyrings/docker.gpg
+    | gpg --dearmor -o /etc/yum/keyrings/docker.gpg
+  chmod a+r /etc/yum/keyrings/docker.gpg
 
   . /etc/os-release
   echo \
